@@ -10,7 +10,16 @@ class User extends Authenticatable
 {
     use HasApiTokens,HasFactory, Notifiable;
 
-    protected $fillable = ['name','email','password','role'];
+   protected $fillable = [
+    'name',
+    'email',
+    'password',
+    'role',
+    'campus',
+    'student_id',
+    'lrn'
+];
+
     protected $hidden = ['password','remember_token'];
 
     public function applications() { return $this->hasMany(Application::class); }

@@ -1,49 +1,80 @@
 <?php
+
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use App\Models\User;
-use App\Models\LoginHistory;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\ValidationException;
 
 class AuthController extends Controller
 {
+    // REGISTER
     public function register(Request $request)
     {
-        $request->validate([
-            'name'=>'required|string|max:255',
-            'email'=>'required|email|unique:users,email',
-            'password'=>'required|string|min:8',
-            'role'=>'required|in:admin,student'
-        ]);
+        if ($request->role === 'admin') {
+            $request->validate([
+                'name' => 'required|string',
+                'campus' => 'required|in:Echague,Angadanan,Jones,Ilagan',
+                'email' => 'required|email|unique:users,email',
+                'password' => 'required|min:6',
+                'role' => 'required|in:admin,student',
+            ]);
 
-        $user = User::create($request->all());
-        $token = $user->createToken('api-token')->plainTextToken;
-
-        LoginHistory::create(['user_id'=>$user->id,'ip_address'=>$request->ip()]);
-
-        return response()->json(['user'=>$user,'token'=>$token],201);
-    }
-
-    public function login(Request $request)
-    {
-        $request->validate(['email'=>'required|email','password'=>'required']);
-        $user = User::where('email',$request->email)->first();
-
-        if(!$user || !Hash::check($request->password,$user->password)){
-            throw ValidationException::withMessages(['email'=>['Invalid credentials']]);
+            $user = User::create([
+                'name' => $request->name,
+                'campus' => $request->campus,
+                'email' => $request->email,
+                'role' => 'admin',
+                'password' => bcrypt($request->password),
+            ]);
         }
 
-        $token = $user->createToken('api-token')->plainTextToken;
-        LoginHistory::create(['user_id'=>$user->id,'ip_address'=>$request->ip()]);
+        if ($request->role === 'student') {
+            $request->validate([
+    'name' => 'required|string|max:255',
+    'student_id' => 'required|unique:users,student_id',
+    'lrn' => 'required|unique:users,lrn',
+    'campus' => 'required|in:Echague,Angadanan,Jones,Ilagan',
+    'password' => 'required|string|min:6|confirmed',
+]);
 
-        return response()->json(['user'=>$user,'token'=>$token]);
+User::create([
+    'name' => $request->name,
+    'student_id' => $request->student_id,
+    'lrn' => $request->lrn,
+    'campus' => $request->campus,
+    'role' => 'student',
+    'password' => bcrypt($request->password),
+]);
+
+        }
+
+        return response()->json(['message' => 'User registered', 'user' => $user], 201);
     }
 
-    public function logout(Request $request)
+    // LOGIN
+    public function login(Request $request)
     {
-        $request->user()->tokens()->delete();
-        return response()->json(['message'=>'Logged out']);
+        $request->validate([
+            'role' => 'required|in:admin,student',
+            'email' => $request->role === 'admin' ? 'required|email' : 'nullable',
+            'student_id' => $request->role === 'student' ? 'required' : 'nullable',
+            'password' => 'required',
+        ]);
+
+        $credentials = $request->role === 'admin'
+            ? ['email' => $request->email, 'password' => $request->password]
+            : ['student_id' => $request->student_id, 'password' => $request->password];
+
+        $user = User::where($request->role === 'admin' ? 'email' : 'student_id', $request->role === 'admin' ? $request->email : $request->student_id)->first();
+
+        if (!$user || !Hash::check($request->password, $user->password)) {
+            return response()->json(['message' => 'Invalid credentials'], 401);
+        }
+
+        $token = $user->createToken('API Token')->plainTextToken;
+
+        return response()->json(['message' => 'Logged in', 'token' => $token, 'user' => $user]);
     }
 }

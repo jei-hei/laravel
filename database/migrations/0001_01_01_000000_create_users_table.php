@@ -11,16 +11,16 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('users', function (Blueprint $table) {
+         Schema::create('users', function (Blueprint $table) {
             $table->id();
-            $table->string('name');
-            $table->string('id_number')->nullable()->unique(); // Only for students
-            $table->string('lrn')->nullable();                // Only for students
-            $table->string('email')->nullable()->unique();    // Only for admins
-            $table->string('password')->nullable();           // Only for admins
-            $table->string('campus'); // echague, jones, etc
-            $table->string('role');   // student/admin
-            $table->string('profile_image')->nullable();
+            $table->string('name')->nullable(); // optional, can use for admin
+            $table->string('campus');
+            $table->string('email')->nullable()->unique(); // admin
+            $table->string('student_id')->nullable()->unique(); // student
+            $table->string('lrn')->nullable()->unique(); // student
+            $table->string('role'); // admin or student
+            $table->string('password');
+            $table->rememberToken();
             $table->timestamps();
         });
 
