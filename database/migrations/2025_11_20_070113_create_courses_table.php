@@ -8,18 +8,20 @@ return new class extends Migration
 {
     public function up()
     {
-Schema::create('batches', function (Blueprint $table) {
+Schema::create('courses', function(Blueprint $table){
     $table->id();
-    $table->foreignId('scholarship_id')->constrained()->onDelete('cascade');
-    $table->string('batch_number'); // e.g. "1.1"
+    $table->foreignId('batch_id')->constrained()->cascadeOnDelete();
+    $table->string('name');
     $table->timestamps();
+    $table->index('batch_id');
 });
+
 
 
     }
 
     public function down()
     {
-        Schema::dropIfExists('batches');
+        Schema::dropIfExists('courses');
     }
 };

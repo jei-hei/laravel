@@ -1,39 +1,28 @@
 <?php
-
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use App\Models\Batch;
 use App\Models\Scholarship;
+use App\Models\AuditLog;
 
 class BatchController extends Controller
 {
-    // list batches for scholarship
-    public function indexByScholarship(Scholarship $scholarship)
+    public function __construct()
     {
-        return response()->json($scholarship->batches()->with('courses')->get());
+        $this->middleware(['auth:sanctum','role:admin']);
     }
 
     public function store(Request $request, Scholarship $scholarship)
     {
-        $request->validate(['batch_number'=>'required|string']);
-        $batch = $scholarship->batches()->create([
-            'batch_number' => $request->batch_number,
+        $request->validate([
+            'name'=>'required|string',
+            'year'=>'required|integer'
         ]);
-        return response()->json($batch, 201);
-    }
 
-    public function update(Request $request, Batch $batch)
-    {
-        $request->validate(['batch_number'=>'required|string']);
-        $batch->update($request->only('batch_number'));
-        return response()->json($batch);
-    }
+        $batch = $scholarship->batches()->create($request->only('name','year'));
+        AuditLog::create(['user_id'=>auth()->id(),'action'=>'Added batch '.$batch->name.' to scholarship '.$scholarship->title]);
 
-    public function destroy(Batch $batch)
-    {
-        $batch->delete();
-        return response()->json(['message'=>'deleted']);
+        return response()->json(['message'=>'Batch added','batch'=>$batch],201);
     }
 }
-

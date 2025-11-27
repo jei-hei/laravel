@@ -1,38 +1,24 @@
 <?php
-
 namespace App\Models;
-
-use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
-use Laravel\Sanctum\HasApiTokens;
 use Illuminate\Notifications\Notifiable;
+use Laravel\Sanctum\HasApiTokens;
+use Illuminate\Support\Facades\Hash;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 
 class User extends Authenticatable
 {
-    use HasApiTokens, HasFactory, Notifiable;
+    use HasApiTokens,HasFactory, Notifiable;
 
-    // Add all fields you want to allow mass assignment
-    protected $fillable = [
-        'name',
-        'id_number',   // added
-        'lrn',         // added
-        'campus',      // added
-        'role',
-        'email',
-        'password',    // optional if used
-        
-    ];
+    protected $fillable = ['name','email','password','role'];
+    protected $hidden = ['password','remember_token'];
 
-    protected $hidden = [
-        'password',
-        'lrn',          // optional: hide LRN
-        'remember_token',
-    ];
+    public function applications() { return $this->hasMany(Application::class); }
+    public function loginHistories() { return $this->hasMany(LoginHistory::class); }
+    public function auditLogs() { return $this->hasMany(AuditLog::class); }
 
+    public function isAdmin() { return $this->role === 'admin'; }
+    public function isStudent() { return $this->role === 'student'; }
 
-    // Relationships
-    public function applications()
-    {
-        return $this->hasMany(Application::class);
-    }
+    public function setPasswordAttribute($password) { $this->attributes['password'] = Hash::make($password); }
 }

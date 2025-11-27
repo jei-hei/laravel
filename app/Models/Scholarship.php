@@ -1,22 +1,10 @@
 <?php
-
 namespace App\Models;
-
-use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
 class Scholarship extends Model
 {
-    use HasFactory;
-
-    protected $fillable = ['title', 'description'];
-
-    public function batches() {
-        return $this->hasMany(Batch::class);
-    }
-
-    public function applications() {
-        return $this->hasMany(Application::class);
-    }
+    protected $fillable = ['title','description','created_by'];
+    public function batches() { return $this->hasMany(Batch::class); }
+    public function applications() { return $this->hasMany(Application::class); }
 }
-

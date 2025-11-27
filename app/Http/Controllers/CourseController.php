@@ -1,36 +1,25 @@
 <?php
-
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
-use App\Models\Course;
 use App\Models\Batch;
+use App\Models\Course;
+use App\Models\AuditLog;
 
 class CourseController extends Controller
 {
-    public function indexByBatch(Batch $batch)
+    public function __construct()
     {
-        return response()->json($batch->courses);
+        $this->middleware(['auth:sanctum','role:admin']);
     }
 
     public function store(Request $request, Batch $batch)
     {
         $request->validate(['name'=>'required|string']);
-        $course = $batch->courses()->create(['name'=>$request->name]);
-        return response()->json($course, 201);
-    }
 
-    public function update(Request $request, Course $course)
-    {
-        $request->validate(['name'=>'required|string']);
-        $course->update($request->only('name'));
-        return response()->json($course);
-    }
+        $course = $batch->courses()->create($request->only('name'));
+        AuditLog::create(['user_id'=>auth()->id(),'action'=>'Added course '.$course->name.' to batch '.$batch->name]);
 
-    public function destroy(Course $course)
-    {
-        $course->delete();
-        return response()->json(['message'=>'deleted']);
+        return response()->json(['message'=>'Course added','course'=>$course],201);
     }
 }
-

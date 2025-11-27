@@ -48,4 +48,7 @@ class Kernel extends HttpKernel
         'guest' => \App\Http\Middleware\RedirectIfAuthenticated::class,
         'role' => \App\Http\Middleware\RoleMiddleware::class,
     ];
+
+
+
 }

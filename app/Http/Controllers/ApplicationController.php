@@ -1,64 +1,55 @@
 <?php
-
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use App\Models\Application;
-use App\Models\Course;
-use App\Models\Scholarship;
+use App\Models\AuditLog;
+use Illuminate\Support\Facades\DB;
 
 class ApplicationController extends Controller
 {
-    // student apply
+    public function __construct()
+    {
+        $this->middleware('auth:sanctum');
+    }
+
     public function store(Request $request)
     {
         $request->validate([
             'scholarship_id'=>'required|exists:scholarships,id',
             'batch_id'=>'required|exists:batches,id',
             'course_id'=>'required|exists:courses,id',
-            'message'=>'nullable|string',
         ]);
 
-        $user = $request->user();
-        $application = Application::create([
-            'scholarship_id'=>$request->scholarship_id,
-            'user_id'=>$user->id,
-            'batch_id'=>$request->batch_id,
-            'course_id'=>$request->course_id,
-            'message'=>$request->message,
-            'status'=>'pending',
-        ]);
+        $exists = Application::where('user_id',auth()->id())
+            ->where('batch_id',$request->batch_id)->first();
 
-        return response()->json($application, 201);
+        if($exists) return response()->json(['message'=>'Already applied to this batch'],422);
+
+        DB::transaction(function() use($request){
+            $application = Application::create([
+                'user_id'=>auth()->id(),
+                'scholarship_id'=>$request->scholarship_id,
+                'batch_id'=>$request->batch_id,
+                'course_id'=>$request->course_id,
+                'status'=>'ongoing',
+            ]);
+
+            AuditLog::create(['user_id'=>auth()->id(),'action'=>'Applied to scholarship ID '.$application->scholarship_id]);
+        });
+
+        return response()->json(['message'=>'Application submitted'],201);
     }
 
-    // admin view apps for a course
-    public function indexByCourse(Course $course)
-    {
-        $apps = $course->applications()->with('user')->get();
-        return response()->json($apps);
-    }
-
-    // approve/reject
     public function updateStatus(Request $request, Application $application)
     {
-        $request->validate(['status'=>'required|in:pending,approved,rejected']);
-        $application->status = $request->status;
-        $application->save();
-        return response()->json($application);
-    }
+        $request->validate(['status'=>'required|in:approved,declined']);
 
-    // student's own
-    public function myApplications(Request $request)
-    {
-        $user = $request->user();
-        $apps = Application::where('user_id',$user->id)->with('scholarship','batch','course')->get();
-        return response()->json($apps);
-    }
+        DB::transaction(function() use($request,$application){
+            $application->update(['status'=>$request->status]);
+            AuditLog::create(['user_id'=>auth()->id(),'action'=>'Updated application ID '.$application->id.' status to '.$request->status]);
+        });
 
-    // optional: index all (admin)
-    public function index()
-    {
-        return response()->json(Application::with('user','scholarship','batch','course')->get());
+        return response()->json(['message'=>'Status updated','application'=>$application]);
     }
 }
