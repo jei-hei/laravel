@@ -1,17 +1,11 @@
 <?php
 
 namespace App\Http;
-
 use Illuminate\Foundation\Http\Kernel as HttpKernel;
-use App\Http\Middleware\Authenticate;
 
 class Kernel extends HttpKernel
 {
-    /**
-     * Global HTTP middleware stack.
-     */
     protected $middleware = [
-        // Handles CORS, secure headers, etc.
         \App\Http\Middleware\TrustProxies::class,
         \Illuminate\Http\Middleware\HandleCors::class,
         \App\Http\Middleware\PreventRequestsDuringMaintenance::class,
@@ -20,9 +14,6 @@ class Kernel extends HttpKernel
         \Illuminate\Foundation\Http\Middleware\ConvertEmptyStringsToNull::class,
     ];
 
-    /**
-     * Route middleware groups.
-     */
     protected $middlewareGroups = [
         'web' => [
             \App\Http\Middleware\EncryptCookies::class,
@@ -34,21 +25,17 @@ class Kernel extends HttpKernel
         ],
 
         'api' => [
-            'throttle:api',
+            \Illuminate\Routing\Middleware\ThrottleRequests::class . ':api',
             \Illuminate\Routing\Middleware\SubstituteBindings::class,
         ],
     ];
 
-    /**
-     * Route Middleware
-     */
     protected $routeMiddleware = [
-        'auth' => Authenticate::class,
-        'auth.basic' => \Illuminate\Auth\Middleware\AuthenticateWithBasicAuth::class,
-        'guest' => \App\Http\Middleware\RedirectIfAuthenticated::class,
-        'role' => \App\Http\Middleware\RoleMiddleware::class,
+        'auth'      => \App\Http\Middleware\Authenticate::class,
+        'role'      => \App\Http\Middleware\RoleMiddleware::class,
+        'verified'  => \Illuminate\Auth\Middleware\EnsureEmailIsVerified::class,
+        'throttle'  => \Illuminate\Routing\Middleware\ThrottleRequests::class,
+        'bindings'  => \Illuminate\Routing\Middleware\SubstituteBindings::class,
+        'cors'      => \Illuminate\Http\Middleware\HandleCors::class,
     ];
-
-
-
 }

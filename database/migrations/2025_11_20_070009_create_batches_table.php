@@ -12,9 +12,8 @@ Schema::create('batches', function(Blueprint $table){
     $table->id();
     $table->foreignId('scholarship_id')->constrained()->cascadeOnDelete();
     $table->string('name');
-    $table->integer('year');
+    $table->foreignId('created_by')->constrained('users')->cascadeOnDelete();
     $table->timestamps();
-    $table->index('scholarship_id');
 });
 
 

@@ -8,16 +8,18 @@ return new class extends Migration
 {
     public function up()
     {
-Schema::create('courses', function(Blueprint $table){
-    $table->id();
-    $table->foreignId('batch_id')->constrained()->cascadeOnDelete();
-    $table->string('name');
-    $table->timestamps();
-    $table->index('batch_id');
-});
+        Schema::create('courses', function (Blueprint $table) {
+            $table->id();
+            $table->unsignedBigInteger('batch_id');
+            $table->string('code')->nullable();
+            $table->string('name');
+            $table->text('description')->nullable();
+            $table->unsignedBigInteger('created_by')->nullable();
+            $table->timestamps();
 
-
-
+            $table->foreign('batch_id')->references('id')->on('batches')->onDelete('cascade');
+            $table->index('batch_id');
+        });
     }
 
     public function down()

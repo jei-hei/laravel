@@ -14,10 +14,9 @@ Schema::create('applications', function(Blueprint $table){
     $table->foreignId('scholarship_id')->constrained()->cascadeOnDelete();
     $table->foreignId('batch_id')->constrained()->cascadeOnDelete();
     $table->foreignId('course_id')->constrained()->cascadeOnDelete();
-    $table->enum('status',['ongoing','approved','declined'])->default('ongoing');
+    $table->enum('status',['pending','approved','rejected'])->default('pending');
     $table->string('uploaded_file')->nullable();
     $table->timestamps();
-    $table->index('user_id');
 });
 
     }

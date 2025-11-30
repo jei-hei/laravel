@@ -1,4 +1,5 @@
 <?php
+
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
@@ -10,19 +11,52 @@ class BatchController extends Controller
 {
     public function __construct()
     {
-        $this->middleware(['auth:sanctum','role:admin']);
+        $this->middleware('auth:sanctum');
     }
 
+    protected function checkAdmin()
+    {
+        if (!auth()->user() || auth()->user()->role !== 'admin') {
+            abort(response()->json(['success' => false, 'message' => 'Forbidden'], 403));
+        }
+    }
+
+    /**
+     * Store a new batch for the given scholarship (route-model binding).
+     *
+     * Route: POST /api/scholarships/{scholarship}/batches
+     */
     public function store(Request $request, Scholarship $scholarship)
     {
+        $this->checkAdmin();
+
         $request->validate([
-            'name'=>'required|string',
-            'year'=>'required|integer'
+            'name' => 'nullable|string|max:255',
+            'year' => 'nullable|integer',
         ]);
 
-        $batch = $scholarship->batches()->create($request->only('name','year'));
-        AuditLog::create(['user_id'=>auth()->id(),'action'=>'Added batch '.$batch->name.' to scholarship '.$scholarship->title]);
+        // generate name if not provided: "scholarshipId.sequence" (e.g., "1.1")
+        if (!$request->filled('name')) {
+            $nextSeq = $scholarship->batches()->count() + 1;
+            $name = $scholarship->id . '.' . $nextSeq;
+        } else {
+            $name = $request->input('name');
+        }
 
-        return response()->json(['message'=>'Batch added','batch'=>$batch],201);
+        // use provided year or fallback to sentinel (0)
+        $year = $request->input('year', 0);
+
+        $batch = $scholarship->batches()->create([
+            'name' => $name,
+            'year' => $year,
+            'created_by' => auth()->id(),
+        ]);
+
+        AuditLog::create([
+            'user_id' => auth()->id(),
+            'action' => 'Created batch '.$batch->name,
+        ]);
+
+        return response()->json(['message' => 'Batch created', 'batch' => $batch], 201);
     }
 }

@@ -1,16 +1,24 @@
 <?php
+
+// app/Http/Middleware/RoleMiddleware.php
 namespace App\Http\Middleware;
+
 use Closure;
-use Illuminate\Http\Request;
 
 class RoleMiddleware
 {
-    public function handle(Request $request, Closure $next, $role)
+    public function handle($request,Closure $next,...$roles)
     {
         $user = $request->user();
-        if (!$user || $user->role !== $role) {
-            return response()->json(['message' => 'Unauthorized'], 403);
+
+        if (!$user) {
+            return response()->json(['success' => false, 'message' => 'Unauthorized'], 401);
         }
+
+        if (!in_array($user->role, $roles, true)) {
+            return response()->json(['success' => false, 'message' => 'Forbidden'], 403);
+        }
+
         return $next($request);
     }
 }

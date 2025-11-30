@@ -4,7 +4,6 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use App\Models\Application;
 use App\Models\AuditLog;
-use Illuminate\Support\Facades\DB;
 
 class ApplicationController extends Controller
 {
@@ -13,43 +12,50 @@ class ApplicationController extends Controller
         $this->middleware('auth:sanctum');
     }
 
+    // Student can submit application
     public function store(Request $request)
     {
+        if (!auth()->user() || auth()->user()->role !== 'student') {
+            return response()->json(['message' => 'Unauthorized'], 403);
+        }
+
         $request->validate([
-            'scholarship_id'=>'required|exists:scholarships,id',
-            'batch_id'=>'required|exists:batches,id',
-            'course_id'=>'required|exists:courses,id',
+            'scholarship_id' => 'required|exists:scholarships,id',
+            'batch_id' => 'required|exists:batches,id'
         ]);
 
-        $exists = Application::where('user_id',auth()->id())
-            ->where('batch_id',$request->batch_id)->first();
+        $application = Application::create([
+            'user_id' => auth()->id(),
+            'scholarship_id' => $request->scholarship_id,
+            'batch_id' => $request->batch_id,
+        ]);
 
-        if($exists) return response()->json(['message'=>'Already applied to this batch'],422);
+        AuditLog::create([
+            'user_id' => auth()->id(),
+            'action' => 'Submitted application '.$application->id
+        ]);
 
-        DB::transaction(function() use($request){
-            $application = Application::create([
-                'user_id'=>auth()->id(),
-                'scholarship_id'=>$request->scholarship_id,
-                'batch_id'=>$request->batch_id,
-                'course_id'=>$request->course_id,
-                'status'=>'ongoing',
-            ]);
-
-            AuditLog::create(['user_id'=>auth()->id(),'action'=>'Applied to scholarship ID '.$application->scholarship_id]);
-        });
-
-        return response()->json(['message'=>'Application submitted'],201);
+        return response()->json(['message'=>'Application submitted', 'application'=>$application], 201);
     }
 
+    // Admin can update status
     public function updateStatus(Request $request, Application $application)
     {
-        $request->validate(['status'=>'required|in:approved,declined']);
+        if (!auth()->user() || auth()->user()->role !== 'admin') {
+            return response()->json(['message' => 'Unauthorized'], 403);
+        }
 
-        DB::transaction(function() use($request,$application){
-            $application->update(['status'=>$request->status]);
-            AuditLog::create(['user_id'=>auth()->id(),'action'=>'Updated application ID '.$application->id.' status to '.$request->status]);
-        });
+        $request->validate([
+            'status' => 'required|in:approved,rejected,pending'
+        ]);
 
-        return response()->json(['message'=>'Status updated','application'=>$application]);
+        $application->update(['status' => $request->status]);
+
+        AuditLog::create([
+            'user_id' => auth()->id(),
+            'action' => 'Updated application '.$application->id.' status to '.$application->status
+        ]);
+
+        return response()->json(['message'=>'Application status updated', 'application'=>$application]);
     }
 }
