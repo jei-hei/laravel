@@ -11,15 +11,16 @@ return new class extends Migration
      */
     public function up(): void
     {
-         Schema::create('users', function (Blueprint $table) {
+        Schema::create('users', function (Blueprint $table) {
             $table->id();
             $table->string('name')->nullable(); // optional, can use for admin
             $table->string('campus');
             $table->string('email')->nullable()->unique(); // admin
-            $table->string('student_id')->nullable()->unique(); // student
-            $table->string('lrn')->nullable()->unique(); // student
+            $table->string('student_id')->nullable()->unique(); // student identifier
+            $table->string('lrn')->nullable()->unique(); // plaintext LRN (temporary during migration)
+            $table->string('lrn_hash')->nullable(); // hashed LRN (preferred for auth)
             $table->string('role'); // admin or student
-            $table->string('password');
+            $table->string('password')->nullable();
             $table->rememberToken();
             $table->timestamps();
         });
@@ -44,8 +45,8 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('users');
-        Schema::dropIfExists('password_reset_tokens');
         Schema::dropIfExists('sessions');
+        Schema::dropIfExists('password_reset_tokens');
+        Schema::dropIfExists('users');
     }
 };

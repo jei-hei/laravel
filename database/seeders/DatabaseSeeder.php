@@ -15,11 +15,24 @@ class DatabaseSeeder extends Seeder
      */
     public function run(): void
     {
-        // User::factory(10)->create();
+        // Admin user
+        User::create([
+            'name'     => 'Admin User',
+            'email'    => 'admin@example.com',
+            'campus'   => 'Echague',
+            'role'     => 'admin',
+            'password' => 'AdminPass123!', // model mutator will hash
+        ]);
 
-        User::factory()->create([
-            'name' => 'Test User',
-            'email' => 'test@example.com',
+        // Student user
+        User::create([
+            'name'       => 'Student User',
+            'email'      => 'student@example.com',
+            'student_id' => '12-3456',
+            'lrn'        => '123456789012', // model will populate lrn_hash
+            'campus'     => 'Echague',
+            'role'       => 'student',
+            'password'   => 'StudentPass123!', // optional; model will hash
         ]);
     }
 }

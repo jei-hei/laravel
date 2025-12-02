@@ -14,26 +14,31 @@ class ScholarshipController extends Controller
 
     public function index()
     {
-        $scholarships = Scholarship::with('batches.courses')->get();
+        // Load applications and the user who applied for each application
+        $scholarships = Scholarship::with('applications.user')->get();
+
         return response()->json(['success' => true, 'scholarships' => $scholarships]);
     }
 
     public function show(Scholarship $scholarship)
     {
-        return response()->json(['success' => true, 'scholarship' => $scholarship->load('batches.courses')]);
+        // Load applications and the user who applied for each application
+        return response()->json(['success' => true, 'scholarship' => $scholarship->load('applications.user')]);
     }
 
     // Helper to check if the authenticated user is admin
     protected function checkAdmin()
     {
         if (!auth()->user() || auth()->user()->role !== 'admin') {
-            abort(response()->json(['success' => false, 'message' => 'Forbidden'], 403));
+            return response()->json(['success' => false, 'message' => 'Forbidden'], 403);
         }
     }
 
     public function store(Request $request)
     {
-        $this->checkAdmin();
+        if ($resp = $this->checkAdmin()) {
+            return $resp;
+        }
 
         $request->validate([
             'title' => 'required|string|max:255',
@@ -56,7 +61,9 @@ class ScholarshipController extends Controller
 
     public function update(Request $request, Scholarship $scholarship)
     {
-        $this->checkAdmin();
+        if ($resp = $this->checkAdmin()) {
+            return $resp;
+        }
 
         $request->validate([
             'title' => 'required|string|max:255',
@@ -75,7 +82,9 @@ class ScholarshipController extends Controller
 
     public function destroy(Scholarship $scholarship)
     {
-        $this->checkAdmin();
+        if ($resp = $this->checkAdmin()) {
+            return $resp;
+        }
 
         $title = $scholarship->title;
         $scholarship->delete();
